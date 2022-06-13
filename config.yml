@@ -1,0 +1,38 @@
+baseURL: https://davidlev.me/
+languageCode: en-us
+title: "David Lev"
+theme: "PaperMod"
+
+
+params:
+    defaultTheme: auto
+    ShowCodeCopyButtons: true
+    profileMode:
+        enabled: true
+        title: "Hi, I'm  David" # optional default will be site title
+        subtitle: "You can find me in a lot of places on the internet."
+        imageUrl: "main_logo.jpeg" # optional
+        imageTitle: "my logo" # optional
+        imageWidth: 120 # custom size
+        imageHeight: 120 # custom size
+
+    ShowShareButtons: true
+    ShareButtons: ["linkedin", "twitter"]
+    socialIcons:
+      - name: "paypal"
+        url: "https://paypal.me/davidlev"
+      - name: "other"
+        url: "https://davidlev.me"
+      - name: "spotify"
+        url: "https://open.spotify.com/user/4xgot8coriuhr6ad9f29pt0pv"
+      - name: "github"
+        url: "https://github.com/david-lev"
+      - name: "telegram"
+        url: "https://t.me/davidlev"
+      - name: "discord"
+        url: "https://discordapp.com/users/808839114874683422"
+      - name: "email"
+        url: "mailto:davidlev@telegmail.com"
+      - name: "twitter"
+        url: "https://twitter.com"
+
