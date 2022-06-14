@@ -1,4 +1,4 @@
-baseURL: https://davidlev.me/
+baseURL: http://127.0.0.1:5500/public/
 languageCode: en-us
 title: "David Lev"
 theme: "PaperMod"
@@ -9,7 +9,7 @@ params:
     ShowCodeCopyButtons: true
     profileMode:
         enabled: true
-        title: "Hi, I'm  David" # optional default will be site title
+        title: "Hi, I'm  David." # optional default will be site title
         subtitle: "You can find me in a lot of places on the internet."
         imageUrl: "main_logo.jpeg" # optional
         imageTitle: "my logo" # optional
