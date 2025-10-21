@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect WhatsApp Business Account | David Lev</title>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+      color: #1f2937;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 40px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #111827;
+    }
+    p {
+      color: #4b5563;
+      font-size: 15px;
+      margin-bottom: 30px;
+    }
+    button {
+      background-color: #1877f2;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      height: 45px;
+      padding: 0 24px;
+      transition: background 0.2s ease-in-out;
+    }
+    button:hover {
+      background-color: #166fe5;
+    }
+    .response-box {
+      display: none;
+      margin-top: 30px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: left;
+      word-wrap: break-word;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .copy-btn {
+      margin-top: 10px;
+      background: #10b981;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .copy-btn:hover {
+      background: #0ea370;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Connect Your WhatsApp Business Account</h1>
+    <p>Click the button below to connect your WhatsApp Business Account using Facebook Embedded Signup.</p>
+    <button onclick="launchWhatsAppSignup()">Login with Facebook</button>
+
+    <div id="response-box" class="response-box">
+      <h3>Signup Response</h3>
+      <pre id="response-content"></pre>
+      <button class="copy-btn" onclick="copyResponse()">Copy Response</button>
+      <p style="margin-top:10px; font-size:13px; color:#6b7280;">
+        Please copy this response and send it to <strong>david@davidlev.dev</strong>.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '1890164541438214', // your app ID
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v24.0'
+      });
+    };
+
+    window.addEventListener('message', (event) => {
+      if (!event.origin.endsWith('facebook.com')) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'WA_EMBEDDED_SIGNUP') {
+          showResponse(data);
+        }
+      } catch {
+        showResponse(event.data);
+      }
+    });
+
+    const fbLoginCallback = (response) => {
+      showResponse(response);
+    };
+
+    const launchWhatsAppSignup = () => {
+      FB.login(fbLoginCallback, {
+        config_id: '1369022054851259', // your configuration ID
+        response_type: 'code',
+        override_default_response_type: true,
+        extras: {
+          setup: {},
+          featureType: "whatsapp_business_app_onboarding",
+          sessionInfoVersion: "3"
+        }
+      });
+    };
+
+    function showResponse(data) {
+      const box = document.getElementById('response-box');
+      const content = document.getElementById('response-content');
+      box.style.display = 'block';
+      content.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function copyResponse() {
+      const content = document.getElementById('response-content').textContent;
+      navigator.clipboard.writeText(content);
+      alert('Response copied to clipboard!');
+    }
+  </script>
+</body>
+</html>
