@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,6 +18,7 @@
       height: 100vh;
       margin: 0;
     }
+
     .container {
       background: #fff;
       border-radius: 12px;
@@ -26,16 +28,19 @@
       width: 100%;
       text-align: center;
     }
+
     h1 {
       font-size: 24px;
       margin-bottom: 10px;
       color: #111827;
     }
+
     p {
       color: #4b5563;
       font-size: 15px;
       margin-bottom: 30px;
     }
+
     button {
       background-color: #1877f2;
       border: none;
@@ -48,9 +53,11 @@
       padding: 0 24px;
       transition: background 0.2s ease-in-out;
     }
+
     button:hover {
       background-color: #166fe5;
     }
+
     .response-box {
       display: none;
       margin-top: 30px;
@@ -63,6 +70,7 @@
       font-family: monospace;
       white-space: pre-wrap;
     }
+
     .copy-btn {
       margin-top: 10px;
       background: #10b981;
@@ -74,6 +82,7 @@
       cursor: pointer;
       transition: background 0.2s ease;
     }
+
     .copy-btn:hover {
       background: #0ea370;
     }
@@ -97,34 +106,55 @@
   </div>
 
   <script>
+    const WORKER_URL = "https://wa-auth-worker.davidlev050414.workers.dev";
+
     window.fbAsyncInit = function () {
       FB.init({
-        appId: '1890164541438214', // your app ID
+        appId: '1890164541438214',
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v24.0'
       });
     };
 
-    window.addEventListener('message', (event) => {
+    window.addEventListener('message', async (event) => {
       if (!event.origin.endsWith('facebook.com')) return;
+
+      let data;
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'WA_EMBEDDED_SIGNUP') {
-          showResponse(data);
-        }
+        data = typeof event.data === "string"
+          ? JSON.parse(event.data)
+          : event.data;
       } catch {
-        showResponse(event.data);
+        return;
+      }
+
+      if (data.type !== 'WA_EMBEDDED_SIGNUP') return;
+
+      appendResponse({
+        source: "facebook",
+        payload: data,
+      });
+
+      if (data.code) {
+        await exchangeCodeWithWorker(data.code);
       }
     });
 
     const fbLoginCallback = (response) => {
-      showResponse(response);
+      appendResponse({
+        source: "facebook-login-callback",
+        payload: response,
+      });
+
+      if (response?.code) {
+        exchangeCodeWithWorker(response.code);
+      }
     };
 
     const launchWhatsAppSignup = () => {
       FB.login(fbLoginCallback, {
-        config_id: '1369022054851259', // your configuration ID
+        config_id: '1369022054851259',
         response_type: 'code',
         override_default_response_type: true,
         extras: {
@@ -135,11 +165,57 @@
       });
     };
 
-    function showResponse(data) {
+    async function exchangeCodeWithWorker(code) {
+      appendResponse({
+        source: "cloudflare-worker",
+        status: "sending",
+        code,
+      });
+
+      try {
+        const res = await fetch(`${WORKER_URL}?code=${encodeURIComponent(code)}`, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+
+        const data = await res.json();
+
+        appendResponse({
+          source: "cloudflare-worker",
+          status: res.ok ? "success" : "error",
+          payload: data,
+        });
+      } catch (err) {
+        appendResponse({
+          source: "cloudflare-worker",
+          status: "network-error",
+          error: String(err),
+        });
+      }
+    }
+
+    function appendResponse(entry) {
       const box = document.getElementById('response-box');
       const content = document.getElementById('response-content');
+
       box.style.display = 'block';
-      content.textContent = JSON.stringify(data, null, 2);
+
+      const existing = content.textContent
+        ? content.textContent + "\n\n"
+        : "";
+
+      content.textContent =
+        existing +
+        JSON.stringify(
+          {
+            timestamp: new Date().toISOString(),
+            ...entry,
+          },
+          null,
+          2
+        );
     }
 
     function copyResponse() {
@@ -149,4 +225,5 @@
     }
   </script>
 </body>
+
 </html>
