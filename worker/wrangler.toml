@@ -1,0 +1,7 @@
+name = "wa-auth-worker"
+main = "index.js"
+compatibility_date = "2026-10-01"
+
+[[kv_namespaces]]
+binding = "WA_TOKENS"
+id = "599d13dce98b4e5e9359c88e50947403"

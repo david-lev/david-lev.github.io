@@ -106,7 +106,7 @@
   </div>
 
   <script>
-    const WORKER_URL = "https://wa-auth-worker.davidlev050414.workers.dev";
+    const WORKER_URL = "https://wa-auth-worker.davidlev.workers.dev";
 
     window.fbAsyncInit = function () {
       FB.init({
@@ -117,8 +117,12 @@
       });
     };
 
-    window.addEventListener('message', async (event) => {
-      if (!event.origin.endsWith('facebook.com')) return;
+    // The code (FB.login callback) and the asset IDs (message event) arrive
+    // separately and in any order; onboard once we have both.
+    const session = { code: null, info: null, sent: false };
+
+    window.addEventListener('message', (event) => {
+      if (!['https://www.facebook.com', 'https://web.facebook.com'].includes(event.origin)) return;
 
       let data;
       try {
@@ -129,55 +133,71 @@
         return;
       }
 
-      if (data.type !== 'WA_EMBEDDED_SIGNUP') return;
+      if (data?.type !== 'WA_EMBEDDED_SIGNUP') return;
 
       appendResponse({
         source: "facebook",
         payload: data,
       });
 
-      if (data.code) {
-        await exchangeCodeWithWorker(data.code);
+      // FINISH (new number) or FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING (coexistence)
+      if (data.event === 'FINISH' || data.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+        session.info = { event: data.event, ...data.data };
+        maybeOnboard();
       }
     });
 
     const fbLoginCallback = (response) => {
       appendResponse({
         source: "facebook-login-callback",
-        payload: response,
+        payload: { status: response?.status, hasCode: Boolean(response?.authResponse?.code) },
       });
 
-      if (response?.code) {
-        exchangeCodeWithWorker(response.code);
+      if (response?.authResponse?.code) {
+        session.code = response.authResponse.code;
+        maybeOnboard();
       }
     };
+
+    function maybeOnboard() {
+      if (session.sent || !session.code || !session.info?.waba_id) return;
+      session.sent = true;
+      onboardWithWorker(session.code, session.info);
+    }
 
     const launchWhatsAppSignup = () => {
       FB.login(fbLoginCallback, {
         config_id: '1369022054851259',
         response_type: 'code',
         override_default_response_type: true,
-        extras: {
-          setup: {},
-          featureType: "whatsapp_business_app_onboarding",
-          sessionInfoVersion: "3"
-        }
+        // v4: the version and products come from the Login Configuration, extras stays empty
+        extras: {}
       });
     };
 
-    async function exchangeCodeWithWorker(code) {
+    async function onboardWithWorker(code, info) {
       appendResponse({
         source: "cloudflare-worker",
         status: "sending",
-        code,
+        waba_id: info.waba_id,
+        phone_number_id: info.phone_number_id,
+        event: info.event,
       });
 
       try {
-        const res = await fetch(`${WORKER_URL}?code=${encodeURIComponent(code)}`, {
-          method: "GET",
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
           headers: {
+            "Content-Type": "application/json",
             "Accept": "application/json",
           },
+          body: JSON.stringify({
+            code,
+            waba_id: info.waba_id,
+            phone_number_id: info.phone_number_id,
+            business_id: info.business_id,
+            coexistence: info.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING',
+          }),
         });
 
         const data = await res.json();
