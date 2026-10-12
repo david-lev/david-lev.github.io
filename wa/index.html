@@ -170,8 +170,12 @@
         config_id: '1369022054851259',
         response_type: 'code',
         override_default_response_type: true,
-        // v4: the version and products come from the Login Configuration, extras stays empty
-        extras: {}
+        // v4: the version and products come from the Login Configuration.
+        // featureType enables the WhatsApp Business app (coexistence) onboarding flow.
+        extras: {
+          setup: {},
+          featureType: "whatsapp_business_app_onboarding"
+        }
       });
     };
 
